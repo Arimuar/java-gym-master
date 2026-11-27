@@ -32,8 +32,8 @@ public class Timetable {
             return Collections.emptyList();
         }
         List<TrainingSession> result = new ArrayList<>();
-        for (TimeOfDay time : daySchedule.navigableKeySet()) {
-            result.addAll(daySchedule.get(time));
+        for (List<TrainingSession> sessions : daySchedule.values()) {
+            result.addAll(sessions);
         }
         return result;
     }
@@ -51,34 +51,25 @@ public class Timetable {
     }
 
     public List<CounterOfTrainings> getCountByCoaches() {
-        Map<Coach, Integer> counter = new HashMap<>();
-        Iterator<TreeMap<TimeOfDay, List<TrainingSession>>> dayIterator = timetable.values().iterator();
-        while (dayIterator.hasNext()) {
-            TreeMap<TimeOfDay, List<TrainingSession>> daySchedule = dayIterator.next();
+        Map<Coach, Integer> counters = new HashMap<>();
 
-            Iterator<List<TrainingSession>> sessionsIterator = daySchedule.values().iterator();
-            while (sessionsIterator.hasNext()) {
-                List<TrainingSession> sessions = sessionsIterator.next();
+        for (TreeMap<TimeOfDay, List<TrainingSession>> trainingsForDay : timetable.values()) {
+            for (List<TrainingSession> trainingsForTime : trainingsForDay.values()) {
+                for (TrainingSession trainingSession : trainingsForTime) {
+                    Coach coach = trainingSession.getCoach();
 
-                for (int i = 0; i < sessions.size(); i++) {
-                    TrainingSession session = sessions.get(i);
-                    Coach coach = session.getCoach();
-
-                    Integer current = counter.get(coach);
-                    if (current == null) {
-                        counter.put(coach, 1);
+                    if (!counters.containsKey(coach)) {
+                        counters.put(coach, 1);
                     } else {
-                        counter.put(coach, current + 1);
+                        counters.put(coach, counters.get(coach) + 1);
                     }
                 }
             }
         }
 
         List<CounterOfTrainings> result = new ArrayList<>();
-        Iterator<Map.Entry<Coach, Integer>> entryIterator = counter.entrySet().iterator();
-        while (entryIterator.hasNext()) {
-            Map.Entry<Coach, Integer> entry = entryIterator.next();
-            result.add(new CounterOfTrainings(entry.getKey(), entry.getValue()));
+        for (Coach coach : counters.keySet()) {
+            result.add(new CounterOfTrainings(coach, counters.get(coach)));
         }
 
         result.sort(new Comparator<CounterOfTrainings>() {
